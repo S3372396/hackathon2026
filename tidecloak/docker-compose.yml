@@ -1,0 +1,17 @@
+# Local TideCloak dev instance for the health journal. Started by tidecloak/setup.sh:
+#
+#   docker compose --env-file .env -f tidecloak/docker-compose.yml up -d
+#
+# Realm setup (roles, users, licence, IGA) is done by tidecloak/setup.sh, not by this file.
+services:
+  tidecloak:
+    image: tideorg/tidecloak-dev:latest
+    container_name: health-journal-tidecloak
+    ports:
+      - "8080:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?set KC_BOOTSTRAP_ADMIN_PASSWORD in .env}
+    volumes:
+      # H2 database, so the realm and its Tide accounts survive restarts. Gitignored.
+      - ./data:/opt/keycloak/data/h2

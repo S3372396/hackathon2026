@@ -8,30 +8,23 @@
   "roles": {
     "realm": [
       { "name": "_tide_enabled", "description": "Represents a tide user thats allowed perform actions on tide" },
-      { "name": "_tide_encryptor", "description": "RelationshipAttestation:1: may encrypt records a policy grants to this user (name fixed by the ORK contract). Capability only; the policy subject decides which records." },
-      { "name": "_tide_decryptor", "description": "RelationshipAttestation:1: may decrypt records a policy grants to this user (name fixed by the ORK contract). Capability only; the policy subject decides which records." },
-      { "name": "_tide_notes.selfencrypt", "description": "Voucher gate for encrypt operations. Grants no access to any note by itself." },
-      { "name": "_tide_notes.selfdecrypt", "description": "Voucher gate for decrypt operations. Grants no access to any note by itself; the per-tag policy decides." },
+      { "name": "_tide_encryptor", "description": "RelationshipAttestation:1 (name fixed by the contract): may encrypt for a record that a signed policy grants to this user. Opens nothing by itself." },
+      { "name": "_tide_decryptor", "description": "RelationshipAttestation:1 (name fixed by the contract): may decrypt a record that a signed policy grants to this user. Opens nothing by itself." },
+      { "name": "_tide_journal.selfencrypt", "description": "Self-encryption of the patient's own journal entries (tag 'journal')." },
+      { "name": "_tide_journal.selfdecrypt", "description": "Self-decryption of the patient's own journal entries (tag 'journal'). Only the patient who encrypted an entry can decrypt it." },
+      { "name": "_tide_voucher.selfdecrypt", "description": "Voucher gate: lets a professional's decrypt requests reach the network. Opens no data by itself." },
       {
-        "name": "production_manager",
-        "description": "Workspace: sees plan, risks, production notes; approves as Production. Decrypts tag 'production' via its RelationshipAttestation policy (Stage 5).",
+        "name": "patient",
+        "description": "App role: a patient. Logs journal entries and shares chosen ones. The server checks this role on every request.",
         "composite": true,
-        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor", "_tide_notes.selfencrypt", "_tide_notes.selfdecrypt"] }
+        "composites": { "realm": ["_tide_encryptor", "_tide_journal.selfencrypt", "_tide_journal.selfdecrypt"] }
       },
       {
-        "name": "safety_officer",
-        "description": "Workspace: sees plan, risks, safety + medical notes; approves as Safety. Decrypts tags 'safety' and 'medical' via their policies (Stage 5).",
+        "name": "professional",
+        "description": "App role: a medical or allied health professional. Opens packages shared with them; a signed policy decides which.",
         "composite": true,
-        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor", "_tide_notes.selfencrypt", "_tide_notes.selfdecrypt"] }
+        "composites": { "realm": ["_tide_decryptor", "_tide_voucher.selfdecrypt"] }
       },
-      {
-        "name": "venue_manager",
-        "description": "Workspace: sees plan, risks, venue notes; approves as Venue. Decrypts tag 'venue' via its policy (Stage 5).",
-        "composite": true,
-        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor", "_tide_notes.selfencrypt", "_tide_notes.selfdecrypt"] }
-      },
-      { "name": "stage_manager", "description": "Workspace: sees plan and risks; can draft and submit. Cannot approve." },
-      { "name": "viewer", "description": "Workspace: plan summary and status only." },
       {
         "name": "default-roles-REALM_NAME",
         "description": "${role_default-roles}",
@@ -51,20 +44,16 @@
     {
       "clientId": "CLIENT_NAME",
       "enabled": true,
-      "redirectUris": [
-        "CLIENT_APP_URL",
-        "CLIENT_APP_URL/*",
-        "CLIENT_APP_URL/silent-check-sso.html",
-        "CLIENT_APP_URL/auth/redirect"
-      ],
-      "webOrigins": ["CLIENT_APP_URL"],
+      "redirectUris": [],
+      "webOrigins": [],
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "publicClient": true,
       "fullScopeAllowed": true,
       "attributes": {
         "dpop.bound.access.tokens": "true",
-        "tide.createdViaConsole": "true"
+        "tide.createdViaConsole": "true",
+        "post.logout.redirect.uris": "+"
       },
       "protocolMappers": [
         {

@@ -27,6 +27,8 @@ export interface AppDeps {
   webOrigin?: string;
   /** Sent with 401 responses, e.g. the DPoP challenge. */
   wwwAuthenticate?: string;
+  /** Adds non-API routes (the Tide browser pages) before the error handlers. */
+  mount?: (app: express.Express) => void;
 }
 
 export class HttpError extends Error {
@@ -104,7 +106,7 @@ function parseCreateShare(db: Db, patient: StoredUser, body: unknown, now: Date)
   };
 }
 
-export function createApp({ db, authenticate, now = () => new Date(), webOrigin, wwwAuthenticate }: AppDeps): express.Express {
+export function createApp({ db, authenticate, now = () => new Date(), webOrigin, wwwAuthenticate, mount }: AppDeps): express.Express {
   const app = express();
   app.disable('x-powered-by');
 
@@ -248,6 +250,8 @@ export function createApp({ db, authenticate, now = () => new Date(), webOrigin,
   app.use('/api', () => {
     throw new HttpError(404, 'no such endpoint');
   });
+
+  mount?.(app);
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof HttpError) return void res.status(err.status).json({ error: err.message });

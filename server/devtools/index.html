@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Journal dev check</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@tidecloak/js": "/vendor/@tidecloak/js/dist/esm/src/index.js",
+        "@tideorg/js": "/vendor/@tideorg/js/dist/index.js",
+        "heimdall-tide": "/vendor/heimdall-tide/dist/esm/index.js"
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/dev/dev.css">
+</head>
+<body>
+  <header>
+    <h1>Journal dev check</h1>
+    <p class="note">Test harness for sign-in, roles and secure sharing. Not the app UI. Fake data only.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Session</h2>
+      <p id="status">Loading TideCloak...</p>
+      <div class="row">
+        <button id="sign-in" hidden>Sign in with Tide</button>
+        <button id="sign-out" hidden>Sign out</button>
+      </div>
+      <dl id="whoami" hidden></dl>
+    </section>
+
+    <section id="roles" hidden>
+      <h2>What this role can reach (server-enforced)</h2>
+      <button id="check-roles">Run role check</button>
+      <table>
+        <thead><tr><th>Request</th><th>Expected</th><th>Got</th><th></th></tr></thead>
+        <tbody id="role-results"></tbody>
+      </table>
+    </section>
+
+    <section id="patient" hidden></section>
+    <section id="professional" hidden></section>
+
+    <section>
+      <h2>Log</h2>
+      <pre id="log"></pre>
+    </section>
+  </main>
+  <script type="module" src="/dev/dev.js"></script>
+</body>
+</html>
