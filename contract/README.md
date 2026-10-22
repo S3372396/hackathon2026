@@ -14,7 +14,7 @@
 | `GET /api/shares/:id/package` returns a `ProtectedPackage` | It returns ciphertext. `openPackage` decrypts it in the professional's browser and still returns `Entry[]`. |
 | `User.tideUserKey` | A share's policy must name the recipient's Tide key. |
 | `/api/entries` carries `EncryptedEntry` | Entry contents are encrypted in the browser, so the operator cannot read the journal. `encryptEntry` / `decryptEntries` let the UI keep working with plain `Entry` objects. |
-| `PUT /api/entries/:id` | The plan's table says `PUT /api/entries` without an id. |
+| `PUT /api/entries` takes the id in the body | As in the plan's table and Member 1's mock API. |
 
 ## Calling the API
 
@@ -35,11 +35,11 @@ JSON in and out. Every 4xx body is `{ "error": "..." }`.
 | GET | `/api/professionals` | patient | | `200` `User[]` (with `tideUserKey`) |
 | GET | `/api/entries` | patient | | `200` `EncryptedEntry[]`, own entries, newest first |
 | POST | `/api/entries` | patient | `EntryUpload` | `201` `EncryptedEntry` |
-| PUT | `/api/entries/:id` | patient | `EntryUpload` | `200` `EncryptedEntry` |
+| PUT | `/api/entries` | patient | `{ id }` plus `EntryUpload` | `200` `EncryptedEntry` |
 | POST | `/api/shares` | patient | `CreateShareRequest` | `201` `Share` |
 | GET | `/api/shares` | any | | `200` `Share[]`. Patient: shares they made. Professional: shares addressed to them. |
 | GET | `/api/shares/:id/package` | professional | | `200` `ProtectedPackage` |
-| POST | `/api/shares/:id/withdraw` | patient | | `200` `Share` (already withdrawn: `200`, no change) |
+| POST | `/api/shares/:id/withdraw` | patient | | `200` `Share` (already withdrawn or expired: `200`, no change) |
 | GET | `/api/audit` | patient | | `200` `AuditEvent[]` for own shares, oldest first |
 
 Used by `secureShare.ts` only (both sides are Member 2's, so these are not part of the UI contract):
@@ -55,9 +55,9 @@ Error codes:
 | --- | --- |
 | `400` | Invalid body, for example unknown entry ids, a recipient who is not a professional, `expiresAt` in the past, or a package that does not match the share. |
 | `401` | Missing or invalid token or DPoP proof. |
-| `403` | Signed in but not allowed: wrong role, or not your entry or share. On `/package`: not the recipient, withdrawn, or expired. |
+| `403` | Signed in but not allowed: wrong role, or not your entry or share. On `/package`: not the recipient, withdrawn, expired, or an unknown id (so ids cannot be probed). |
 | `404` | No entry or share with that id. |
-| `409` | Withdrawing a share that has already expired, or reusing a `packageId`. |
+| `409` | Reusing a `packageId`. |
 | `503` | `/api/tide/admin-policy` before TideCloak setup is finished. |
 
 ## `secureShare.ts` (in `/web/src/lib/`)
