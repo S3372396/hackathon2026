@@ -197,13 +197,18 @@ export function createApp({
     res.status(201).json(store.insertEntry(db, user.id, parseEntryUpload(req.body), now()));
   });
 
-  app.put('/api/entries/:id', (req, res) => {
+  // The contract's table lists PUT /api/entries with no id in the path, so the id travels in the
+  // body, as in Member 1's mock API.
+  app.put('/api/entries', (req, res) => {
     const user = me(res);
     requireRole(user, 'patient');
-    const entry = store.getEntry(db, req.params.id);
+    const id = (req.body as { id?: unknown } | undefined)?.id;
+    if (typeof id !== 'string' || !id) throw new HttpError(400, 'id is required');
+    const entry = store.getEntry(db, id);
     if (!entry) throw new HttpError(404, 'no such entry');
     if (entry.patientId !== user.id) throw new HttpError(403, 'not your entry');
-    res.json(store.updateEntry(db, entry.id, parseEntryUpload(req.body), now()));
+    const { id: _id, ...upload } = req.body as Record<string, unknown>;
+    res.json(store.updateEntry(db, entry.id, parseEntryUpload(upload), now()));
   });
 
   app.post('/api/shares', (req, res) => {
@@ -225,7 +230,12 @@ export function createApp({
 
   app.get('/api/shares/:id/package', (req, res) => {
     const user = me(res);
-    const share = findShare(req.params.id);
+    store.expireDueShares(db, now());
+    const share = store.getShare(db, req.params.id);
+    // Unknown ids get the same 403 as a refused share, so share ids cannot be probed.
+    if (!share) throw new HttpError(403, 'access denied');
+    // The patient looking at their own share is not a denied attempt worth auditing.
+    if (user.id === share.patientId) throw new HttpError(403, 'only the recipient can open a package');
     if (user.role !== 'professional') throw deny(share, user, 'only the recipient can open a package');
     if (share.recipientId !== user.id) throw deny(share, user, 'this share is not addressed to you');
     if (share.status !== 'active') throw deny(share, user, `this share has been ${share.status}`);
@@ -237,10 +247,11 @@ export function createApp({
 
   app.post('/api/shares/:id/withdraw', (req, res) => {
     const user = me(res);
+    requireRole(user, 'patient');
     const share = findShare(req.params.id);
-    if (user.role !== 'patient' || share.patientId !== user.id) throw deny(share, user, 'only the patient who made this share can withdraw it');
-    if (share.status === 'expired') throw new HttpError(409, 'this share has already expired');
-    if (share.status === 'withdrawn') return void res.json(share);
+    if (share.patientId !== user.id) throw new HttpError(404, 'no such share');
+    // Repeatable: withdrawing a share that is already withdrawn or expired changes nothing.
+    if (share.status !== 'active') return void res.json(share);
     const withdrawn = transaction(db, () => {
       const updated = store.withdrawShare(db, share.id);
       audit(updated, 'withdrawn', user.id);
