@@ -121,7 +121,7 @@ Nothing can undo data that was already decrypted, viewed, screenshotted or copie
 
 - Q1 and Q2: achievable (Tide-verified; not yet run on our setup).
 - Q3: partly. Withdrawal is enforced immediately by our server and by the network at expiry. There is no instant network-level revocation for one share.
-- The findings change the contract (below). Per the plan, we stop here and agree the options and contract changes before Task 2.
+- The findings change the contract. The chosen option and the proposed contract changes are below; the contract changes still need Member 1's agreement.
 
 ## Design options
 
@@ -143,9 +143,25 @@ For journal entries:
 - **E1. Leave entries in plaintext on the server.** The contract is unchanged, but the README must not claim the operator cannot read the journal.
 - **E2. Self-encrypt entry contents in the browser (recommended).** Encrypt `title`, `value` and `notes` with tag `journal` (patient roles `_tide_journal.selfencrypt` / `.selfdecrypt`). Keep `id`, `patientId`, `type` and `loggedAt` in clear for filtering.
 
-## Proposed contract changes (not applied; needs Member 1's agreement)
+## Decision (2026-10-23): A + E2, with C as the fallback
 
-`/contract/types.ts` is exactly as the plan defines it (with `export` added). With options A and E2 it would change as follows:
+| Criterion | A | B | C | A + D |
+| --- | --- | --- | --- | --- |
+| Only the named professional can decrypt, enforced by | Tide network | Tide network | our own key handling (a server could swap public keys) | Tide network |
+| Patient makes the grant | yes | no | yes | yes |
+| Expiry enforced by | network and server | network and server | server only | network and server |
+| Withdrawal enforced by | server now, network at expiry | same as A | server only | network within about one token lifetime |
+| Extra approvals | one enclave approval per share | one per share, by an admin | none | several per share and per withdrawal |
+| Main risk | contract unconfirmed on our network | same as A | lowest (self-encryption is in the official docs) | highest (timing not measured) |
+
+- **A** is the only option where Tide, not our code, enforces both "only this professional" and "not after expiry", while the patient makes the grant.
+- **D** adds approvals for a guarantee the plan does not require (the plan only promises that withdrawal stops future access).
+- **E2** is what makes the "operator does not need plaintext" claim true. Without it, protecting the shared copy changes nothing for the operator.
+- **Fallback:** if the live checks show our network lacks `RelationshipAttestation:1`, switch to **C**. The UI is not affected, because it treats `ProtectedPackage` as opaque. Only `secureShare.ts` and the server change.
+
+## Proposed contract changes (pending Member 1's agreement)
+
+Proposed on branch `feat/secure-sharing` in `/contract/types.ts` and `/contract/README.md`. Changes from the plan's contract:
 
 1. `ProtectedPackage` is used by `protectEntries` but never defined. Proposal:
    ```ts
