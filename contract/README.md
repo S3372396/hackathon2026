@@ -45,7 +45,7 @@ Error codes:
 | `401` | Missing or invalid token or DPoP proof. |
 | `403` | Signed in but not allowed: wrong role, or not your entry or share. On `/package`: not the recipient, withdrawn, or expired. |
 | `404` | No entry or share with that id. |
-| `409` | Withdrawing a share that has already expired. |
+| `409` | Withdrawing a share that has already expired, or reusing a `packageId`. |
 
 ## `secureShare.ts` (in `/web/src/lib/`)
 

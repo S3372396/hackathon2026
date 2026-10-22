@@ -7,7 +7,8 @@ import { createApp } from './app.ts';
 const db = openDb(config.dbPath);
 if (seedIfEmpty(db)) console.log('Seeded the demo users into an empty database.');
 
-const server = createApp({ db }).listen(config.port, () => {
+// Until TideCloak sign-in is wired up (Task 4), every /api call is refused with 401.
+const server = createApp({ db, authenticate: async () => null }).listen(config.port, () => {
   const { port } = server.address() as AddressInfo;
   console.log(`Health journal API on http://localhost:${port} (database: ${config.dbPath})`);
 });

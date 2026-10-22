@@ -47,8 +47,13 @@ describe('server', () => {
       const res = await fetch(`http://localhost:${port}/health`);
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ ok: true, users: 3 });
+      const api = await fetch(`http://localhost:${port}/api/me`);
+      expect(api.status).toBe(401); // no sign-in wired up yet: the API must fail closed
     } finally {
+      // Wait for the exit, or Windows keeps the database file locked and the cleanup fails.
+      const exited = new Promise((resolve) => child.once('exit', resolve));
       child.kill();
+      await exited;
     }
   });
 });
