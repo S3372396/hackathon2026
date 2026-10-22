@@ -1,0 +1,22 @@
+node_modules/
+.next/
+out/
+build/
+
+# Secrets — operator credentials NEVER belong in the repo (AP-41).
+.env
+.env.local
+.env.*.local
+scripts/.skycloak-api-key
+
+# Local TideCloak state (adapter export + H2 volume)
+data/tidecloak.json
+data/keycloakdb*
+.tide-pack/
+
+
+# Stage 0: local TideCloak state, environment-specific adapter export, invite links (bearer creds)
+tidecloak/data/
+tidecloak/invite-links.txt
+tidecloak/.realm.json
+tidecloak.json
