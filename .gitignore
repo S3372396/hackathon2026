@@ -20,3 +20,6 @@ tidecloak/data/
 tidecloak/invite-links.txt
 tidecloak/.realm.json
 tidecloak.json
+
+# Server SQLite database (fake demo data; reset with npm run reset)
+server/data/
