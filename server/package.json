@@ -16,6 +16,9 @@
     "express": "5.2.1"
   },
   "devDependencies": {
+    "@tidecloak/js": "0.14.41",
+    "@tideorg/js": "0.14.29",
+    "heimdall-tide": "0.14.41",
     "vitest": "5.0.3"
   }
 }
