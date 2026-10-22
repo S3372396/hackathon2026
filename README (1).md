@@ -56,13 +56,13 @@ The demo walks through one journey:
 
 | Feature | Status |
 | --- | --- |
-| Log habits, moods and symptoms | `[CONFIRM]` |
-| Patient dashboard | `[CONFIRM]` |
-| Share selected entries with a chosen professional | `[CONFIRM]` |
-| Scope and duration controls | `[CONFIRM]` |
-| Withdraw future access | `[CONFIRM]` |
-| Clinician view | `[CONFIRM]` |
-| Sharing audit trail | `[CONFIRM]` |
+| Log habits, moods and symptoms | UI built (runs on a mock API for now) |
+| Patient dashboard | UI built (mock API): trend charts, timeline, type and date filters |
+| Share selected entries with a chosen professional | UI built (mock API). Sharing protection is a placeholder until the TideCloak integration lands |
+| Scope and duration controls | UI built (mock API): date range, entry types, per-entry selection, expiry |
+| Withdraw future access | UI built (mock API). Enforcement depends on the TideCloak integration |
+| Clinician view | UI built (mock API): opens shared entries, with clear denied, withdrawn and expired states |
+| Sharing audit trail | UI built (mock API): shows each share, view, refusal, withdrawal and expiry to the patient |
 | Per-recipient copy marking for leak attribution (optional) | `[CONFIRM]` |
 
 ## Honest limits
@@ -74,7 +74,7 @@ The demo walks through one journey:
 
 ## Tech stack
 
-- Frontend: `[CONFIRM]`
+- Frontend: React, TypeScript and Vite in `/web`, with an MSW mock API and Vitest
 - Backend / database: `[CONFIRM]`
 - Access control and encryption: TideCloak (`@tidecloak/react` SDK) `[CONFIRM]`
 
@@ -88,9 +88,10 @@ docker run --rm -p 8080:8080 \
 
 # 2. Activate the license in the TideCloak admin console (http://localhost:8080)
 
-# 3. Install and run the app
+# 3. Install and run the frontend (uses its mock API until the server is connected)
+cd web
 npm install
-npm run dev   # [CONFIRM: your actual commands]
+npm run dev   # [CONFIRM: add the server commands]
 ```
 
 Use development credentials only. Do not enter real health information into a prototype.
