@@ -14,5 +14,9 @@ data/tidecloak.json
 data/keycloakdb*
 .tide-pack/
 
-# ShowGate app data (ciphertext + signed policies)
-data/showgate/
+
+# Stage 0: local TideCloak state, environment-specific adapter export, invite links (bearer creds)
+tidecloak/data/
+tidecloak/invite-links.txt
+tidecloak/.realm.json
+tidecloak.json

@@ -7,35 +7,36 @@
   "duplicateEmailsAllowed": true,
   "roles": {
     "realm": [
-      { "name": "appUser", "description": "Standard application user" },
       { "name": "_tide_enabled", "description": "Represents a tide user thats allowed perform actions on tide" },
       { "name": "_tide_encryptor", "description": "RelationshipAttestation:1: may encrypt records a policy grants to this user (name fixed by the ORK contract). Capability only; the policy subject decides which records." },
       { "name": "_tide_decryptor", "description": "RelationshipAttestation:1: may decrypt records a policy grants to this user (name fixed by the ORK contract). Capability only; the policy subject decides which records." },
-      { "name": "_tide_vault.selfencrypt", "description": "Encrypt data with tag: vault" },
-      { "name": "_tide_vault.selfdecrypt", "description": "Decrypt data with tag: vault" },
+      { "name": "_tide_notes.selfencrypt", "description": "Voucher gate for encrypt operations. Grants no access to any note by itself." },
+      { "name": "_tide_notes.selfdecrypt", "description": "Voucher gate for decrypt operations. Grants no access to any note by itself; the per-tag policy decides." },
       {
-        "name": "sg-production",
-        "description": "ShowGate: production lead. Submits plans, approves for production, reads/writes production notes. Granting it is an IGA change request.",
+        "name": "production_manager",
+        "description": "Workspace: sees plan, risks, production notes; approves as Production. Decrypts tag 'production' via its RelationshipAttestation policy (Stage 5).",
         "composite": true,
-        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor"] }
+        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor", "_tide_notes.selfencrypt", "_tide_notes.selfdecrypt"] }
       },
       {
-        "name": "sg-safety",
-        "description": "ShowGate: safety officer. Approves for safety, reads/writes safety notes. Granting it is an IGA change request.",
+        "name": "safety_officer",
+        "description": "Workspace: sees plan, risks, safety + medical notes; approves as Safety. Decrypts tags 'safety' and 'medical' via their policies (Stage 5).",
         "composite": true,
-        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor"] }
+        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor", "_tide_notes.selfencrypt", "_tide_notes.selfdecrypt"] }
       },
       {
-        "name": "sg-venue",
-        "description": "ShowGate: venue manager. Approves for the venue, reads/writes venue notes. Granting it is an IGA change request.",
+        "name": "venue_manager",
+        "description": "Workspace: sees plan, risks, venue notes; approves as Venue. Decrypts tag 'venue' via its policy (Stage 5).",
         "composite": true,
-        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor"] }
+        "composites": { "realm": ["_tide_encryptor", "_tide_decryptor", "_tide_notes.selfencrypt", "_tide_notes.selfdecrypt"] }
       },
+      { "name": "stage_manager", "description": "Workspace: sees plan and risks; can draft and submit. Cannot approve." },
+      { "name": "viewer", "description": "Workspace: plan summary and status only." },
       {
         "name": "default-roles-REALM_NAME",
         "description": "${role_default-roles}",
         "composite": true,
-        "composites": { "realm": ["_tide_enabled", "appUser", "_tide_vault.selfencrypt", "_tide_vault.selfdecrypt"] }
+        "composites": { "realm": ["_tide_enabled"] }
       }
     ],
     "client": { "CLIENT_NAME": [] }
@@ -105,22 +106,6 @@
             "included.client.audience": "CLIENT_NAME",
             "access.token.claim": "true",
             "id.token.claim": "false"
-          }
-        },
-        {
-          "name": "ShowGate approval rules",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-hardcoded-claim-mapper",
-          "consentRequired": false,
-          "config": {
-            "claim.name": "showgate_rules",
-            "claim.value": "{\"version\":1,\"requiredApprovals\":[\"sg-production\",\"sg-safety\",\"sg-venue\"],\"mitigationRequiredFor\":[\"medium\",\"high\"]}",
-            "jsonType.label": "JSON",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "userinfo.token.claim": "false",
-            "introspection.token.claim": "true",
-            "lightweight.claim": "true"
           }
         },
         {
