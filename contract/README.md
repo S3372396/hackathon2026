@@ -18,7 +18,12 @@
 
 ## Calling the API
 
-The real server needs a TideCloak token with a DPoP proof on every `/api` call. Send requests through the SDK's `secureFetch` (from `useTideCloak()`, or `IAMService.secureFetch`) with `Authorization: Bearer <token>`. The SDK swaps in `DPoP` authorisation and adds the proof. The mock API can ignore this.
+The real server needs a TideCloak token with a DPoP proof on every `/api` call. Send requests through the SDK's `secureFetch` (from `useTideCloak()`, or `IAMService.secureFetch`):
+
+- pass an **absolute** URL, e.g. `new URL('/api/me', location.origin).href` (the SDK builds the proof with `new URL(url)`, so a relative path throws);
+- send **no** `Authorization` header; `secureFetch` attaches `Authorization: DPoP <token>` and the `DPoP` proof itself.
+
+The mock API can ignore this.
 
 JSON in and out. Every 4xx body is `{ "error": "..." }`.
 
@@ -37,6 +42,13 @@ JSON in and out. Every 4xx body is `{ "error": "..." }`.
 | POST | `/api/shares/:id/withdraw` | patient | | `200` `Share` (already withdrawn: `200`, no change) |
 | GET | `/api/audit` | patient | | `200` `AuditEvent[]` for own shares, oldest first |
 
+Used by `secureShare.ts` only (both sides are Member 2's, so these are not part of the UI contract):
+
+| Method | Path | Who | Success |
+| --- | --- | --- | --- |
+| GET | `/api/tide/admin-policy` | patient | `200` `{ policy }`: the realm's admin policy, needed to sign a share's policies. `503` until TideCloak setup is finished. |
+| GET | `/api/dev/compromised/package/:id` | any (dev tools only) | `200` `ProtectedPackage` for any share. Simulates a compromised server, to show that the Tide network still refuses non-recipients. Off when `DEV_TOOLS=false`. |
+
 Error codes:
 
 | Code | When |
@@ -46,6 +58,7 @@ Error codes:
 | `403` | Signed in but not allowed: wrong role, or not your entry or share. On `/package`: not the recipient, withdrawn, or expired. |
 | `404` | No entry or share with that id. |
 | `409` | Withdrawing a share that has already expired, or reusing a `packageId`. |
+| `503` | `/api/tide/admin-policy` before TideCloak setup is finished. |
 
 ## `secureShare.ts` (in `/web/src/lib/`)
 

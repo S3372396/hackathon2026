@@ -9,12 +9,15 @@ export function log(...parts) {
   $('log').textContent = `${new Date().toLocaleTimeString()}  ${line}\n${$('log').textContent}`;
 }
 
-/** Calls our API with the Tide token; secureFetch swaps Bearer for DPoP and adds the proof. */
+/**
+ * Calls our API with the Tide session. With no Authorization header, secureFetch attaches
+ * `DPoP <token>` and the proof itself; it needs an absolute URL to build the proof's htu.
+ */
 export async function api(path, { method = 'GET', body } = {}) {
-  const token = await IAMService.getToken();
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const res = await IAMService.secureFetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const url = new URL(path, window.location.origin).href;
+  const res = await IAMService.secureFetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await res.text();
   let data = text;
   try { data = text ? JSON.parse(text) : undefined; } catch { /* not JSON */ }

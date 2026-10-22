@@ -23,11 +23,20 @@ if (adapter) {
   console.warn(`No TideCloak adapter at ${config.adapterPath}: every /api call is refused until tidecloak/setup.sh phase2 exports it.`);
 }
 
+// Read on each request, so re-exporting it (setup.sh admin-policy) needs no restart.
+const adminPolicy = () => {
+  if (!existsSync(config.adminPolicyPath)) return undefined;
+  const policy = JSON.parse(readFileSync(config.adminPolicyPath, 'utf8')).policy;
+  return typeof policy === 'string' && policy ? policy : undefined;
+};
+
 const app = createApp({
   db,
   authenticate,
   webOrigin: config.webOrigin,
   wwwAuthenticate: 'DPoP algs="ES256 EdDSA"',
+  adminPolicy,
+  simulateCompromisedServer: config.devTools,
   mount: (a) => mountTidePages(a, { adapter, devTools: config.devTools, serverDir, repoRoot }),
 });
 

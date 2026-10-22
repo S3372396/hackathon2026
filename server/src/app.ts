@@ -29,6 +29,13 @@ export interface AppDeps {
   wwwAuthenticate?: string;
   /** Adds non-API routes (the Tide browser pages) before the error handlers. */
   mount?: (app: express.Express) => void;
+  /** The realm's tide-realm-admin policy (base64), which signing a share's policies needs. */
+  adminPolicy?: () => string | undefined;
+  /**
+   * DEV ONLY: adds GET /api/dev/compromised/package/:id, which hands any signed-in user any stored
+   * package, as a compromised server would. Used to show the Tide network still refuses them.
+   */
+  simulateCompromisedServer?: boolean;
 }
 
 export class HttpError extends Error {
@@ -106,7 +113,9 @@ function parseCreateShare(db: Db, patient: StoredUser, body: unknown, now: Date)
   };
 }
 
-export function createApp({ db, authenticate, now = () => new Date(), webOrigin, wwwAuthenticate, mount }: AppDeps): express.Express {
+export function createApp({
+  db, authenticate, now = () => new Date(), webOrigin, wwwAuthenticate, mount, adminPolicy, simulateCompromisedServer,
+}: AppDeps): express.Express {
   const app = express();
   app.disable('x-powered-by');
 
@@ -246,6 +255,25 @@ export function createApp({ db, authenticate, now = () => new Date(), webOrigin,
     store.expireDueShares(db, now());
     res.json(store.listAudit(db, user.id));
   });
+
+  // Used by secureShare.ts only. The admin policy is public data: it authorises nothing by itself.
+  app.get('/api/tide/admin-policy', (_req, res) => {
+    requireRole(me(res), 'patient');
+    const policy = adminPolicy?.();
+    if (!policy) throw new HttpError(503, 'sharing is not set up yet: run bash tidecloak/setup.sh phase3');
+    res.json({ policy });
+  });
+
+  if (simulateCompromisedServer) {
+    app.get('/api/dev/compromised/shares', (_req, res) => {
+      res.json(db.prepare('SELECT id, recipient_id AS recipientId, status FROM shares ORDER BY created_at DESC').all());
+    });
+    app.get('/api/dev/compromised/package/:id', (req, res) => {
+      const pkg = store.getSharePackage(db, req.params.id);
+      if (!pkg) throw new HttpError(404, 'no stored package for that share (withdrawn, expired or unknown)');
+      res.json(pkg);
+    });
+  }
 
   app.use('/api', () => {
     throw new HttpError(404, 'no such endpoint');
